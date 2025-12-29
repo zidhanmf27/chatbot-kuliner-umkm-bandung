@@ -374,6 +374,13 @@ section[data-testid="stSidebar"] [data-testid="stExpander"] {
   border: none !important;
 }
 
+/* Pastikan Dark Mode tetap punya styling yang benar */
+[data-theme="dark"] [data-testid="textInputRootElement"],
+:root:not([data-theme="light"]) [data-testid="textInputRootElement"] {
+  border: none !important;
+  box-shadow: none !important;
+}
+
 [data-testid="textInputRootElement"]:focus-within {
   border-color: transparent !important;
   box-shadow: none !important;
@@ -503,14 +510,20 @@ div[data-testid="element-container"]:has(.quick-search-container) + div[data-tes
   background-color: rgba(30, 41, 59, 1) !important;
   color: #ffffff !important;
   border: 1px solid var(--border-color) !important;
-  border-radius: 100px !important;
+  border-radius: 20px !important; /* Kembali ke border-radius 20px yang lebih logis untuk wrapping */
   font-weight: 600 !important;
-  padding: 0.25rem 0.5rem !important;
-  font-size: 0.7rem !important;
+  padding: 0.4rem 0.2rem !important; /* Padding kanan kiri tipis agar muat banyak text */
+  font-size: 0.8rem !important; /* Sedikit besarkan dari 0.7 */
   transition: all 0.3s ease !important;
-  min-height: 2.2rem !important;
+  min-height: 3rem !important; /* Tinggi minimal cukup untuk 2 baris */
+  height: auto !important; /* Tinggi otomatis menyesuaikan konten */
   width: 100% !important;
-  white-space: nowrap !important;
+  white-space: normal !important; /* IZINKAN TEKS TURUN BARIS */
+  line-height: 1.2 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  text-align: center !important;
 }
 
 div[data-testid="element-container"]:has(.quick-search-container) + div[data-testid="stHorizontalBlock"] .stButton button:hover {
@@ -727,7 +740,60 @@ text-decoration: underline;
   }
 }
 
+/* --- Scroll to Top Button & Behavior --- */
+
+/* Smooth Scroll Behavior untuk SEMUA container yang mungkin discroll */
+html, body, [data-testid="stAppViewContainer"], .main {
+    scroll-behavior: smooth !important;
+}
+
+.scroll-to-top-btn {
+    position: fixed;
+    bottom: 25px;
+    right: 25px;
+    width: 60px;
+    height: 60px;
+    background: linear-gradient(135deg, #1d4ed8 0%, #7e22ce 100%);
+    color: white !important;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+    z-index: 999999;
+    text-decoration: none !important;
+    transition: transform 0.2s, box-shadow 0.2s;
+    opacity: 0.9;
+}
+
+.scroll-to-top-btn:hover {
+    transform: scale(1.1);
+    box-shadow: 0 6px 20px rgba(37, 99, 235, 0.4);
+    opacity: 1;
+}
+
+.scroll-to-top-btn svg {
+    width: 24px;
+    height: 24px;
+    stroke-width: 2.5;
+}
+
 /* --- PENYESUAIAN LIGHT MODE --- */
+
+/* Sidebar Toggle Button (Panah Buka Sidebar) - SELECTOR YANG BENAR */
+[data-theme="light"] [data-testid="collapsedControl"] {
+    color: #000000 !important;
+}
+
+[data-theme="light"] [data-testid="collapsedControl"] svg {
+    fill: #000000 !important;
+    stroke: #000000 !important;
+    color: #000000 !important;
+}
+
+[data-theme="light"] [data-testid="collapsedControl"]:hover {
+    background-color: rgba(0, 0, 0, 0.05) !important;
+}
 
 /* Hero Icon di Light Mode */
 [data-theme="light"] .hero-icon {
@@ -760,20 +826,91 @@ text-decoration: underline;
   background: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%);
 }
 
-/* Tips Card di Light Mode */
+/* Tips Card di Light Mode - VISIBILITAS MAKSIMAL */
 [data-theme="light"] .tips-card {
-  background: rgba(241, 245, 249, 0.5);
-  border: 1px dashed var(--border-color);
+  background: #f1f5f9 !important;
+  border: 2px dashed #64748b !important;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+  color: #0f172a !important;
 }
 
-/* Input di Light Mode */
+[data-theme="light"] .tips-header {
+  color: #0f172a !important;
+  font-weight: 700;
+}
+
+/* Kembalikan Ikon Lampu jadi Kuning */
+[data-theme="light"] .tips-header i {
+  color: #eab308 !important; /* Kuning Emas */
+}
+
+[data-theme="light"] .tips-list li {
+  color: #334155 !important;
+}
+
+/* Expander/Accordion (Preferensi & Kategori) di Light Mode - VISIBILITAS ULTRA */
+/* Target elemen spesifik di dalam sidebar agar lebih prioritas */
+[data-theme="light"] [data-testid="stSidebar"] [data-testid="stExpander"] {
+  background-color: #f8fafc !important; /* Latar sedikit abu-abu */
+  border: 2px solid #334155 !important; /* Border tebal dan gelap (Hampir hitam) */
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1) !important;
+  border-radius: 8px !important;
+  margin-bottom: 1rem !important;
+  overflow: hidden; /* Supaya border-radius rapi */
+}
+
+[data-theme="light"] [data-testid="stSidebar"] [data-testid="stExpander"] > summary {
+  color: #0f172a !important; /* Teks Hitam */
+  font-weight: 700 !important;
+  background-color: #e2e8f0 !important; /* Header lebih gelap dari body expander */
+  border-bottom: 2px solid #cbd5e1 !important; /* Garis pemisah */
+  padding: 0.5rem 1rem !important;
+}
+
+[data-theme="light"] [data-testid="stSidebar"] [data-testid="stExpander"] > summary:hover {
+  color: #2563eb !important;
+  background-color: #cbd5e1 !important; /* Gelapkan saat hover */
+}
+
+/* Konten di dalam expander */
+[data-theme="light"] [data-testid="stSidebar"] [data-testid="stExpander"] div[role="group"] {
+    padding: 1rem !important;
+    background-color: #ffffff !important; /* Konten putih */
+}
+
+[data-theme="light"] .streamlit-expanderContent {
+  color: #334155 !important;
+}
+
+/* Input di Light Mode - Hapus semua border yang mengganggu */
 [data-theme="light"] .stTextInput input {
   background-color: var(--input-bg);
-  border: 1.5px solid var(--border-color) !important;
+  border: none !important; /* Hapus border sepenuhnya */
   color: var(--text-primary);
-  caret-color: #000000 !important; /* Warna kursor ketik menjadi hitam */
+  caret-color: #000000 !important;
+  outline: none !important;
+  box-shadow: 0 0 0 1px #e5e7eb !important; /* Gunakan box-shadow sebagai border halus */
 }
 
+[data-theme="light"] .stTextInput input:focus {
+  box-shadow: 0 0 0 2px #3b82f6 !important; /* Border biru saat fokus */
+}
+
+/* Hapus border dari parent container input juga */
+[data-theme="light"] [data-testid="textInputRootElement"] {
+  border: none !important;
+  box-shadow: none !important;
+}
+
+/* Scroll to Top Button di Light Mode */
+[data-theme="light"] .scroll-to-top-btn {
+  background: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+}
+
+[data-theme="light"] .scroll-to-top-btn:hover {
+  box-shadow: 0 6px 20px rgba(37, 99, 235, 0.3);
+}
 
 /* Placeholder Styling untuk Light Mode */
 [data-theme="light"] .stTextInput input::placeholder {
@@ -823,17 +960,21 @@ text-decoration: underline;
   box-shadow: 0 0 15px rgba(37, 99, 235, 0.2) !important;
 }
 
-/* Load More Button di Light Mode */
+/* Load More Button di Light Mode - VISIBILITAS DITINGKATKAN */
 [data-theme="light"] div[data-testid="element-container"]:has(.load-more-wrapper) + div[data-testid="element-container"] .stButton button {
-  background: rgba(241, 245, 249, 0.8) !important;
-  border: 1px solid var(--border-color) !important;
-  color: var(--text-secondary) !important;
+  background: #ffffff !important;
+  border: 1px solid #cbd5e1 !important; /* Border abu-abu jelas */
+  color: #2563eb !important; /* Warna biru primary agar terlihat action-able */
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06) !important;
+  font-weight: 600 !important;
 }
 
 [data-theme="light"] div[data-testid="element-container"]:has(.load-more-wrapper) + div[data-testid="element-container"] .stButton button:hover {
-  background: rgba(37, 99, 235, 0.1) !important;
-  border-color: var(--accent-blue) !important;
-  color: var(--accent-blue) !important;
+  background: #eff6ff !important; /* Biru sangat muda saat hover */
+  border-color: #2563eb !important;
+  color: #1e40af !important; /* Biru lebih gelap */
+  transform: translateY(-1px);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1) !important;
 }
 
 /* Match Badge di Light Mode */

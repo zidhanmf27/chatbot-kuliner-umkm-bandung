@@ -31,6 +31,7 @@ load_css('style/app.css')
 # Memuat Font Awesome untuk Ikon
 st.markdown("""
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+<div id="top-of-page"></div>
 """, unsafe_allow_html=True)
 
 # --- Inisialisasi State Aplikasi (Session Management) ---
@@ -43,6 +44,8 @@ if 'chatbot' not in st.session_state:
         st.session_state.chatbot = load_chatbot(dataset_path)
         if 'messages' not in st.session_state:
             st.session_state.messages = []
+        if 'show_scroll_btn' not in st.session_state:
+            st.session_state.show_scroll_btn = False
     except Exception as e:
         st.error(f"Error loading chatbot: {e}")
         st.stop()
@@ -216,7 +219,11 @@ with st.form(key='search_form'):
     st.markdown('<div class="kirim-container">', unsafe_allow_html=True)
     submitted = st.form_submit_button("Kirim", type="primary", use_container_width=True)
     st.markdown('</div>', unsafe_allow_html=True)
-
+    st.markdown("""
+    <div style="margin-bottom: 0.75rem; font-size: 0.9rem; font-weight: 600; color: var(--text-secondary); display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
+        <i class="fas fa-bolt" style="color: #eab308;"></i> Pencarian Cepat
+    </div>
+    """, unsafe_allow_html=True)
     st.markdown('<div class="quick-search-container">', unsafe_allow_html=True)
     q1, q2, q3, q4 = st.columns(4)
     with q1:
@@ -248,6 +255,7 @@ elif quick_roti:
     final_query = "toko roti"
 
 if final_query:
+    st.session_state.show_scroll_btn = False # Reset tombol setiap kali searching baru
     st.session_state.messages.append({"role": "user", "content": final_query})
     
     price_map = {"Semua": "Semua", "Murah": "Murah", "Sedang": "Sedang", "Mahal": "Mahal"}
@@ -343,6 +351,7 @@ if len(st.session_state.messages) > 0:
                     st.markdown('<div class="load-more-wrapper">', unsafe_allow_html=True)
                     if st.button(f"Lebih Banyak ({len(full_recs) - display_count})", key=f"more_{idx}"):
                         message['display_count'] += 5
+                        st.session_state.show_scroll_btn = True
                         st.rerun()
                     st.markdown('</div>', unsafe_allow_html=True)
                 
@@ -378,6 +387,22 @@ if len(st.session_state.messages) > 0:
             st.session_state.messages = []
             st.rerun()
         st.markdown('</div>', unsafe_allow_html=True)
+
+# --- Scroll to Top Button (Conditional Render) ---
+# Tombol HANYA muncul jika ada output rekomendasi yang DITAMPILKAN lebih dari 5
+# (Artinya user sudah mengklik 'Lebih Banyak', sehingga display_count > 5)
+# --- Scroll to Top Button (Conditional Render) ---
+# Tombol hanya muncul jika user telah mengklik 'Lebih Banyak' (status disimpan di session_state)
+if st.session_state.get('show_scroll_btn', False):
+    st.markdown("""
+    <a href="#top-of-page" class="scroll-to-top-btn" title="Kembali ke atas">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="white" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="12" y1="19" x2="12" y2="5"></line>
+            <polyline points="5 12 12 5 19 12"></polyline>
+        </svg>
+    </a>
+    """, unsafe_allow_html=True)
+
 
 # --- Footer ---
 st.markdown("""
