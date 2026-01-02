@@ -136,7 +136,7 @@ with st.sidebar:
     # --- Bagian Kategori Kuliner (Collapsible) ---
     with st.expander("KATEGORI KULINER", expanded=True):
         if total_umkm > 0:
-            top_cats = st.session_state.chatbot.df['kategori'].value_counts().head(5)
+            top_cats = st.session_state.chatbot.df['kategori'].value_counts().head(10)
             st.markdown("<div class='sidebar-cat-list'>", unsafe_allow_html=True)
             for cat, count in top_cats.items():
                 st.markdown(f"<div class='sidebar-cat-item'><span>{cat}</span><span>{count}</span></div>", unsafe_allow_html=True)
@@ -287,6 +287,19 @@ if len(st.session_state.messages) > 0:
         if message['role'] == 'user':
             pass
         else:
+            # Tambahkan garis pemisah sebelum hasil pencarian kedua dan seterusnya
+            if idx > 1:  # idx > 1 karena idx 0 adalah user message pertama, idx 1 adalah bot response pertama
+                st.markdown("""
+                <div style="margin: 2rem 0; display: flex; align-items: center; gap: 1rem;">
+                    <div style="flex: 1; height: 2px; background: linear-gradient(to right, transparent, var(--accent-blue), transparent); opacity: 0.5;"></div>
+                    <div style="display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem 1.5rem; background: var(--card-bg); border: 2px solid var(--accent-blue); border-radius: 50px; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);">
+                        <i class="fas fa-search" style="color: var(--accent-blue); font-size: 1rem;"></i>
+                        <span style="color: var(--text-primary); font-weight: 600; font-size: 0.9rem;">Pencarian Baru</span>
+                    </div>
+                    <div style="flex: 1; height: 2px; background: linear-gradient(to left, transparent, var(--accent-blue), transparent); opacity: 0.5;"></div>
+                </div>
+                """, unsafe_allow_html=True)
+            
             st.markdown(f"""
             <div class="results-container">
                 <div class="results-header-container">
