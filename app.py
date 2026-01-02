@@ -409,8 +409,8 @@ if len(st.session_state.messages) > 0:
 # Tombol HANYA muncul jika ada output rekomendasi yang DITAMPILKAN lebih dari 5
 # (Artinya user sudah mengklik 'Lebih Banyak', sehingga display_count > 5)
 # --- Scroll to Top Button (Conditional Render) ---
-# Tombol hanya muncul jika user telah mengklik 'Lebih Banyak' (status disimpan di session_state)
-if st.session_state.get('show_scroll_btn', False):
+# Tombol muncul jika user telah mengklik 'Lebih Banyak' ATAU sudah melakukan pencarian lebih dari sekali
+if st.session_state.get('show_scroll_btn', False) or len(st.session_state.messages) > 2:
     st.markdown("""
     <a href="#top-of-page" class="scroll-to-top-btn" title="Kembali ke atas">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="white" stroke-linecap="round" stroke-linejoin="round">
