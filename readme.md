@@ -14,6 +14,8 @@ Sistem pencarian tidak hanya mencocokkan kata kunci, tetapi memahami konteks:
 - **Content Relevance Coverage:** Semakin banyak kata kunci yang cocok (baik di Nama Restoran maupun Menu), semakin tinggi peringkatnya.
 - **Auto-Correction:** Typo kecil? Tidak masalah. Sistem akan memperbaikinya otomatis (misal: "aym gprk" -> "ayam geprek").
 - **Semantic Expansion:** Memahami sinonim (misal: cari "Murah" akan mencakup "Terjangkau", "Hemat").
+- **Semantic Category Mapping:** Memetakan makanan spesifik ke kategori luas secara otomatis (misal: "Soto", "Bakso" -> "Masakan Indonesia"; "Ramen", "Sushi" -> "Japanese Food") untuk memastikan hasil pencarian selalu penuh dengan rekomendasi relevan.
+- **Smart Fallback:** Jika rekomendasi spesifik (misal: "Ramen Murah") habis, sistem akan otomatis mengisi sisa slot dengan rekomendasi sejenis (misal: "Ramen Mahal" atau "Japanese Food" lainnya) agar pengguna tidak menerima hasil kosong.
 
 ### 2. ⚠️ Intelligent Warning System
 Sistem secara proaktif memberi tahu jika hasil pencarian terbatas untuk preferensi Anda:

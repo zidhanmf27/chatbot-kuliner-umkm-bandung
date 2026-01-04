@@ -102,7 +102,7 @@ class ChatbotEngine:
         if not query or not isinstance(query, str):
             raise ValueError("Query harus berupa string yang tidak kosong!")
             
-        recommendation_warning = None # Default warning string
+        recommendation_warning = None # String peringatan default
         
         query = query.strip()
         if not query:
@@ -112,7 +112,7 @@ class ChatbotEngine:
             # Preprocessing Query: Membersihkan input pengguna (huruf kecil, hapus simbol, stemming)
             processed_query = self.preprocessor.preprocess(query)
             
-            # --- PRE-CHECK EXACT MATCH ---
+            # --- PRA-CEK KECOCOKAN PERSIS (EXACT MATCH) ---
             # Cek apakah raw query adalah nama restoran EXACT match.
             # Ini penting untuk kasus "Ini Itu Cafe" dimana semua katanya terhapus jadi stopword.
             import re
@@ -360,7 +360,37 @@ class ChatbotEngine:
                 'bakso': 'meatball', 'meatball': 'bakso',
                 'soto': 'soup', 'soup': 'soto', 'sup': 'soto',
                 'sate': 'satay', 'satay': 'sate',
-                'gado gado': 'salad', 'salad': 'gado gado'
+                'gado gado': 'salad', 'salad': 'gado gado',
+
+                # [BARU] Mapping Makanan Spesifik -> Kategori Umum (Untuk Category Boost)
+                'ramen': 'japanese food',
+                'sushi': 'japanese food',
+                'udon': 'japanese food',
+                'takoyaki': 'japanese food',
+                
+                'dimsum': 'chinese food', 
+                'bakpao': 'chinese food',
+                
+                'steak': 'western food',
+                'burger': 'western food',
+                'spaghetti': 'western food',
+                'pasta': 'western food',
+                'pizza': 'western food',
+                
+                'bibimbap': 'korean food',
+                'kimchi': 'korean food',
+                'tteokbokki': 'korean food',
+
+                # Indonesian Food Mappings
+                # Skip 'nasi goreng' because data shows it's heavily mixed with 'Cafe & Dessert' (35 vs others)
+                'soto': 'masakan indonesia',
+                'sate': 'masakan indonesia',
+                'bakso': 'masakan indonesia', 
+                'pempek': 'masakan indonesia',
+                'gudeg': 'masakan indonesia',
+                'rawon': 'masakan indonesia',
+                'ayam': 'masakan indonesia', # Dominant 74
+                'bebek': 'masakan indonesia'
             }
             for synonym, replacement in synonym_map_late.items():
                 query_normalized = query_normalized.replace(synonym, replacement)
@@ -405,7 +435,7 @@ class ChatbotEngine:
                 alamat_words = ' '.join(self.df['alamat'].dropna().astype(str)).lower()
                 location_keywords = set([w for w in alamat_words.split() if len(w) >= 4 and w.isalpha()])
                 
-                # [CRITICAL FIX] Hapus kata umum kuliner dari deteksi lokasi
+                # [PERBAIKAN KRITIS] Hapus kata umum kuliner dari deteksi lokasi
                 # Agar "kopi" tidak dianggap sebagai filter lokasi yang menyebabkan penalti massal
                 ignore_location_terms = {
                     'kopi', 'cafe', 'kafe', 'resto', 'warung', 'makan', 'minum',
@@ -474,7 +504,8 @@ class ChatbotEngine:
                          if any(x in matched_category for x in ['kopi', 'cafe', 'kafe']):
                              category_mask = self.df['kategori'].astype(str).str.lower().str.contains('kopi|cafe|kafe|coffee', na=False, regex=True)
                          else:
-                             category_mask = self.df['kategori'].astype(str).str.lower() == matched_category
+                             # [PENCOCOKAN YANG DITINGKATKAN] Gunakan contains agar lebih kuat daripada exact match
+                             category_mask = self.df['kategori'].astype(str).str.lower().str.contains(matched_category, na=False, regex=False)
                          similarity_scores[category_mask] += 20.0 
                     
                     if matched_tipe_pengunjung:
@@ -485,7 +516,7 @@ class ChatbotEngine:
                 # Jika kategori tidak terdeteksi via nama, tapi ada kata 'cafe' (hasil normalisasi kopi/kafe),
                 # paksa boost kategori cafe.
                 elif 'cafe' in query_normalized:
-                     print("[INFO] Cafe intent detected (manual fallback)")
+                     print("[INFO] Intent Cafe terdeteksi (fallback manual)")
                      category_mask = self.df['kategori'].astype(str).str.lower().str.contains('kopi|cafe|kafe|coffee', na=False, regex=True)
                      similarity_scores[category_mask] += 20.0
                     
@@ -512,15 +543,15 @@ class ChatbotEngine:
                         term_mask = self.df['alamat'].astype(str).str.lower().str.contains(term, na=False)
                         addr_mask = addr_mask | term_mask
                     
-                    # Boost Match (Stronger: +15.0) -> Prioritas Mutlak Lokasi
+                    # Boost Match (Lebih Kuat: +15.0) -> Prioritas Mutlak Lokasi
                     similarity_scores[addr_mask] += 15.0
                     
-                    # Penalty Mismatch (STRICT Location Filter)
+                    # Penalti Ketidakcocokan (Filter Lokasi KETAT)
                     if addr_mask.sum() > 0: 
                         similarity_scores[~addr_mask] -= 50.0
                         print(f"[DEBUG] Applied Location Boost (+15.0) & Penalty (-50.0) for '{flt}' (Expanded: {search_terms})")
-            # --- CONTENT RELEVANCE BOOST ---
-            # Prioritizing content (Name/Menu) over price filters
+            # --- DORONGAN RELEVANSI KONTEN ---
+            # Memprioritaskan konten (Nama/Menu) di atas filter harga
             price_terms = {'murah', 'mahal', 'sedang', 'terjangkau', 'hemat', 'premium', 'mewah', 'budget', 'promo', 'murmer'}
             common_stopwords = {'yang', 'dan', 'di', 'ke', 'dari', 'untuk', 'dengan', 'atau', 'ini', 'itu', 'makan', 'minum', 'tempat', 'warung', 'resto'}
             ignore_terms = price_terms | common_stopwords
@@ -531,8 +562,8 @@ class ChatbotEngine:
                 # [BARU] Perluasan sinonim khusus untuk boosting
                 # Agar pencarian "kopi" juga men-boost "koffie", "coffee", "cafe"
                 
-                # [REVISI BOOSTING] Concept Mapping untuk mencegah over-boosting
-                # boost_synonyms sudah didefinisikan sebelumnya di blok Location Boost
+                # [REVISI BOOSTING] Pemetaan Konsep untuk mencegah boosting berlebihan
+                # boost_synonyms sudah didefinisikan sebelumnya di blok Boost Lokasi
                 
                 # Definisi ulang Concept Map (untuk grouping skor)
                 concept_map = {
@@ -564,7 +595,8 @@ class ChatbotEngine:
                     if concept in processed_concepts:
                         continue # Skip jika konsep ini sudah di-boost sebelumnya
                     
-                    # Boost +3.0 per CONCEPT found in Name OR Menu
+                    # Tambah skor +25.0 (Ditingkatkan dari 10.0) per KONSEP yang ditemukan di Nama ATAU Menu
+                    # Konten adalah Raja! Prioritas > Kategori (+20.0)
                     import re
                     safe_word = re.escape(word)
                     
@@ -574,12 +606,12 @@ class ChatbotEngine:
                     anywhere_mask = name_mask | menu_mask
                     
                     if anywhere_mask.any():
-                        similarity_scores[anywhere_mask] += 3.0
+                        similarity_scores[anywhere_mask] += 25.0
                         processed_concepts.add(concept) # Tandai konsep sudah diproses
-                        # print(f"[DEBUG] Applied Boost (+3.0) for concept '{concept}' (trigger: '{word}')")
+
                 
-                # EXACT PHRASE MATCH BOOST (+5.0)
-                # Ensure specific menu items (e.g., "nasi goreng pedas") rank highest
+                # DORONGAN KECOCOKAN FRASE PERSIS (+5.0)
+                # Pastikan item menu spesifik (misal: "nasi goreng pedas") berada di peringkat tertinggi
                 if len(core_words) >= 2:
                     phrase = " ".join(core_words)
                     safe_phrase = re.escape(phrase)
@@ -591,8 +623,8 @@ class ChatbotEngine:
                     similarity_scores[phrase_mask] += 5.0
 
             # --- BOOSTING HARGA ---
-            # Lower boost factor used as tie-breaker (0.5) -> UPDATED to 5.0 for stronger sorting
-            BOOST_FACTOR = 5.0
+            # Faktor boost lebih rendah sebagai pemecah seri (2.0) -> Konten harus mendominasi harga
+            BOOST_FACTOR = 2.0
             
             is_murah = any(k in query_lower for k in ['murah', 'terjangkau', 'hemat', 'low budget'])
             is_sedang = any(k in query_lower for k in ['sedang', 'standar', 'menengah', 'reasonable'])
@@ -603,8 +635,8 @@ class ChatbotEngine:
                 elif price_filter == "Menengah": is_murah, is_sedang, is_mahal = False, True, False
                 elif price_filter == "Mahal": is_murah, is_sedang, is_mahal = False, False, True
             
-            # Apply price boosting only if relevant content found
-            relevant_mask = similarity_scores > -500 # Apply to all not-penalized items
+            # Terapkan boosting harga hanya jika konten relevan ditemukan
+            relevant_mask = similarity_scores > -500 # Terapkan ke semua item yang tidak terkena penalti
             
             if is_murah:
                 mask = self.df['kategori_harga'].astype(str).str.contains('Murah', case=False, na=False)
@@ -619,7 +651,7 @@ class ChatbotEngine:
         except Exception as e:
             raise Exception(f"Error menghitung similarity: {str(e)}")
         
-        # --- EXACT/FUZZY NAME MATCH BOOST (PRIORITY TERTINGGI) ---
+        # --- DORONGAN KECOCOKAN NAMA PERSIS/FUZZY (PRIORITAS TERTINGGI) ---
         # PINDAHKAN KE LUAR try-except agar tidak ter-interrupt
         # Gunakan vectorized operation untuk performa
         try:
@@ -636,16 +668,16 @@ class ChatbotEngine:
             query_clean = normalize_text(query)
             query_len = len(query_clean)
             
-            # Vectorized exact match check (JAUH LEBIH CEPAT)
+            # Cek kecocokan persis terktorisasi (JAUH LEBIH CEPAT)
             df_names_normalized = self.df['nama_rumah_makan'].apply(normalize_text)
             exact_matches = df_names_normalized == query_clean
             
             if exact_matches.any():
                 # Ada exact match - berikan boost SANGAT BESAR untuk override penalty
-                # CRITICAL: Boost harus > 999 untuk mengalahkan strict mode penalty (-999)
+                # PENTING: Boost harus > 999 untuk mengalahkan penalti mode ketat (-999)
                 exact_matches_array = exact_matches.values
                 
-                # BOOST 2000.0 untuk memastikan exact match SELALU menang
+                # BOOST 2000.0 untuk memastikan kecocokan persis SELALU menang
                 similarity_scores[exact_matches_array] += 2000.0
                 
                 matched_names = self.df.loc[exact_matches, 'nama_rumah_makan'].tolist()
@@ -706,7 +738,7 @@ class ChatbotEngine:
                     top_recommendations = fallback_df.head(top_n)
                     print(f"[SUCCESS] Fallback found {len(top_recommendations)} results.")
             
-            # --- INTELLIGENT WARNING SYSTEM (REVISED) ---
+            # --- SISTEM PERINGATAN CERDAS (DIREVISI) ---
             target_price = None
             if is_murah: target_price = "Murah"
             elif is_mahal: target_price = "Mahal"
@@ -714,11 +746,11 @@ class ChatbotEngine:
 
             if target_price and not top_recommendations.empty:
                 if 'kategori_harga' in top_recommendations.columns:
-                    # Intelligent Warning System based on Relevance Score
-                    # Filter out matches that are significantly less relevant than the top result
+                    # Sistem Peringatan Cerdas berdasarkan Skor Relevansi
+                    # Filter hasil yang secara signifikan kurang relevan dibanding hasil teratas
                     
                     max_score = top_recommendations['similarity_score'].max()
-                    # Threshold: Score must be within 3.0 points of the top score (Relaxed)
+                    # Ambang Batas: Skor harus berada dalam 3.0 poin dari skor teratas (Dilonggarkan)
                     relevance_threshold = max(0, max_score - 3.0) 
                     
                     # Check Top 5
